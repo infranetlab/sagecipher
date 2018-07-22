@@ -26,7 +26,7 @@ Installation
 
     pip install sagecipher
 
-Usage 
+Usage
 ------
 
 Before using, ``ssh-agent`` must be running with at least one ssh-key
@@ -57,7 +57,7 @@ available for producing cipher key material:
         raise AgentKeyError(AgentKeyError.E_NO_KEYS)
     sagecipher.cipher.AgentKeyError: SSH agent is not running or no keys are available
 
-Using sagecipher in a Python program 
+Using sagecipher in a Python program
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
@@ -66,10 +66,10 @@ Using sagecipher in a Python program
     >>>
     >>> # Create a new cipher using first key available from ssh-agent
     >>> c1 = Cipher()
-    >>> 
+    >>>
     >>> # Use the cipher header to create a second/future instance
     >>> c2 = Cipher(c1.header())
-    >>>    
+    >>>
     >>> # Display fingerprint of the SSH key used for derivation of cipher key
     >>> to_hex(c2.fingerprint)
     '11:66:89:44:a3:ec:9b:1c:55:cd:f7:54:20:3b:09:c3'
@@ -85,7 +85,7 @@ Using sagecipher in a Python program
     >>> plaintext
     'Alice, I think someone is listening!'
 
-Using the cli tool to provide on-demand decryption to other tools 
+Using the cli tool to provide on-demand decryption to other tools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Check ``sagecipher --help`` for usage...

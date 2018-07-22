@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016  Paul Sherratt <paul@paul.sh>
+# Copyright 2016  Paul Sherratt <paul@paul.sh
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# INFRANETLAB
+# Based on https://github.com/p-sherratt/sagecipher/blob/master/sagecipher/cipher.py
+# See "git log / diff / blame " for the changes
+
 
 """Cipher library for ssh-agent.
 
@@ -55,12 +59,15 @@ except ImportError:
     except ImportError:
         from passlib.utils.pbkdf2 import pbkdf2 as pbkdf2_passlib
 
-from Crypto.Cipher import AES
-from Crypto import Random
+import binascii
+
 import paramiko
+from Crypto import Random
+from Crypto.Cipher import AES
 
 SHA256_ITERATIONS = 100000
-PARAMIKO_VER = tuple(int(v) for v in paramiko.__version__.partition(' ')[0].split('.'))
+PARAMIKO_VER = tuple(int(v)
+                     for v in paramiko.__version__.partition(' ')[0].split('.'))
 BLOCK_SIZE = AES.block_size
 HEADER_SIZE = 64
 
@@ -162,11 +169,12 @@ class Cipher(object):
         Args:
             plaintext (str): The data to encrypt (must be a multiple of *block_size*)
         """
-        return self.cipher.encrypt(plaintext)
+        # FIXME encoding hack
+        return self.cipher.encrypt(plaintext.encode('utf-8'))
 
     def header(self):
         """Generate the header string needed to create this cipher."""
-        return ''.join([self.challenge, self.salt, self._iv, self.fingerprint])
+        return self.challenge + self.salt + self._iv + self.fingerprint
 
 
 def decrypt_string(ciphertext):
@@ -186,6 +194,7 @@ def decrypt_string(ciphertext):
     padded = cipher.decrypt(ciphertext[HEADER_SIZE:])
     return unpad(padded)
 
+
 def encrypt_string(plaintext, hex_fingerprint=None):
     """Helper function to encrypt data.
 
@@ -199,6 +208,7 @@ def encrypt_string(plaintext, hex_fingerprint=None):
     cipher = Cipher(hex_fingerprint=hex_fingerprint)
     return cipher.header() + cipher.encrypt(pad(plaintext))
 
+
 def pad(string):
     """Pads the given string to a length multiple of the cipher block size."""
 
@@ -206,17 +216,24 @@ def pad(string):
     pad_length = BLOCK_SIZE - len(string) % BLOCK_SIZE
     return string + pad_length * chr(pad_length)
 
+
 def unpad(string):
     """Un-pads a string previously padded with the `pad` function."""
-    return string[:-ord(string[len(string)-1:])]
+    return string[:-ord(string[len(string) - 1:])]
+
 
 def to_hex(string):
     """Encode string as a colon-separated hexidecimal representation of each byte"""
-    return ":".join("{:02x}".format(ord(c)) for c in string)
+    hex_str = string
+    if type(hex_str) == bytes:
+        hex_str = string.hex()
+    return ":".join([hex_str[i - 1] + hex_str[i] for i in range(len(hex_str)) if i % 2])
+
 
 def from_hex(string):
     """This function is the inverse of `to_hex`."""
-    return string.replace(':', '').decode('hex')
+    return binascii.unhexlify(string.replace(':', ''))
+
 
 def sign_via_agent(data, fingerprint=None):
     """Attempt to sign 'data' via ssh-agent.
@@ -256,7 +273,8 @@ def sign_via_agent(data, fingerprint=None):
                 sign_key = key
                 break
         if sign_key is None:
-            raise AgentKeyError(AgentKeyError.E_MISSING_KEY, fingerprint=to_hex(fingerprint))
+            raise AgentKeyError(AgentKeyError.E_MISSING_KEY,
+                                fingerprint=to_hex(fingerprint))
     else:
         sign_key = keys[0]
         key_fp = sign_key.get_fingerprint()
@@ -273,6 +291,7 @@ def sign_via_agent(data, fingerprint=None):
         'key_type': sig.get_string(),
         'signature': sig.get_string()
     }
+
 
 class AgentKeyError(Exception):
     """User-friendly error handling of the `sign_via_agent` function
@@ -306,5 +325,3 @@ class AgentKeyError(Exception):
     def __str__(self):
         """User-friendly description of the error"""
         return self.codes[self.code].format(**self.kwargs)
-
-
